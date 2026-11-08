@@ -1,0 +1,19 @@
+[build-system]
+requires=["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "prod-async-fetcher"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.hatch.building.targets.wheel]
+packages = ["src/prod_async_fetcher"]
+
+dependencies= [
+    'httpx',
+    'pydantic',
+    'beautifulsoup4',
+    'typer',
+    'rich'
+]
