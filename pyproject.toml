@@ -7,9 +7,6 @@ name = "prod-async-fetcher"
 version = "0.1.0"
 requires-python = ">=3.12"
 
-[tool.hatch.building.targets.wheel]
-packages = ["src/prod_async_fetcher"]
-
 dependencies= [
     'httpx',
     'pydantic',
@@ -17,3 +14,6 @@ dependencies= [
     'typer',
     'rich'
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/prod_async_fetcher"]
