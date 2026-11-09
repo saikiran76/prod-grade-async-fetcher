@@ -13,7 +13,7 @@ class Status(StrEnum):
 class Page(BaseModel):
     url: str
     attempts: int
-    fetched_et: datetime
+    fetched_at: datetime
     status: Status
     title: str | None = None
     text: str | None = None
