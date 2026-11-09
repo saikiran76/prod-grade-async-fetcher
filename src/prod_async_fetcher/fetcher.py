@@ -1,10 +1,14 @@
 from prod_async_fetcher.config import Config
 import httpx
+import asyncio
 
 class Fetcher:
     def __init__(self, config: Config):
         self.config = config
         self.client: httpx.AsyncClient | None = None
+        self.semaphore = asyncio.Semaphore( ## sharable semaphore
+            self.config.concurrency
+        )
 
     async def __aenter__(self):
         self.client = httpx.AsyncClient(
@@ -24,8 +28,9 @@ class Fetcher:
 
     async def fetch_response(self, url: str) -> httpx.Response:
         ## only fetching when client is available
-        if self.client:
-            return await self.client.get(url)
+        if self.client: ## protecting the HTTP request with the semaphore
+            async with self.semaphore:
+                return await self.client.get(url)
             # Had to remove the following try/catch as excpetions might contain invaluable info and we aren't catching them exactly
             # try:
             #     return await self.client.get(url)
