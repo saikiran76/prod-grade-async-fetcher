@@ -12,11 +12,11 @@ class Status(StrEnum):
 
 class Page(BaseModel):
     url: str
-    name: str
+    attempts: int
     fetched_et: datetime
     status: Status
-    title: str | None
-    text: str | None
-    word_count: int | None
+    title: str | None = None
+    text: str | None = None
+    word_count: int | None = None
     
 
