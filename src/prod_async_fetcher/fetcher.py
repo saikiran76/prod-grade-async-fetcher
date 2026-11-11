@@ -1,7 +1,8 @@
 from prod_async_fetcher.config import Config
 import httpx
 import asyncio
-
+from contextlib import asynccontextmanager
+import random
 class Fetcher:
     def __init__(self, config: Config):
         self.config = config
@@ -50,6 +51,54 @@ class Fetcher:
                 finally:
                     self.active_reqs-=1
                     print("maximum reqs at this point: ", self.max_active_reqs)
+    
+    @asynccontextmanager
+    async def early_release_semaphore(self, sem: asyncio.Semaphore):
+        released = False
+        await sem.acquire()
+
+        def release():
+            nonlocal released
+            if not released:
+                sem.release()
+                released = True
+
+        try:
+            yield release
+        finally:
+            release()    
+
+    async def fetch_response_retry(self, url: str) -> httpx.Response:
+        attempt = 0
+        while attempt < self.config.max_attempts:
+            attempt += 1
+            try:
+                async with self.sempahore:
+                    res = await self.client.get(url)
+                
+                # early releasing 
+                self.early_release_semaphore(self.semaphore)
+
+                # decision
+                base_delay = 0.5*(2**(attempt -1))
+                delay = random.uniform(0, base_delay)
+                sleep = asyncio.sleep(delay)
+                match res.status_code:
+                    case 429:
+                        await sleep
+                        ## initiaiting another request here
+                    case 500:
+                        await sleep
+                    case 502:
+                        await sleep
+                    case 503:
+                        await sleep
+                    case 504:
+                        await sleep
+
+            except httpx.TransportError:
+                raise httpx.TransportError('extenral error')
+
 
                 
                 

@@ -16,3 +16,8 @@ Close inside context:  False
 closed after context:  True
 fetcher client after context:  None
 ```
+
+## jitter (contolling the thunder herd problem)
+### jitter illustration 
+![alt text](image.png)
+
