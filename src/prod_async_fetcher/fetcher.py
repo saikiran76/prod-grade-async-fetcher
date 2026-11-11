@@ -1,7 +1,7 @@
 from prod_async_fetcher.config import Config
 import httpx
 import asyncio
-from contextlib import asynccontextmanager
+# from contextlib import asynccontextmanager
 import random
 class Fetcher:
     def __init__(self, config: Config):
@@ -52,8 +52,8 @@ class Fetcher:
                     self.active_reqs-=1
                     print("maximum reqs at this point: ", self.max_active_reqs)
     
-    @asynccontextmanager
-    async def early_release_semaphore(self, sem: asyncio.Semaphore):
+    # @asynccontextmanager
+    # async def early_release_semaphore(self, sem: asyncio.Semaphore):
         released = False
         await sem.acquire()
 
@@ -76,28 +76,37 @@ class Fetcher:
                 async with self.sempahore:
                     res = await self.client.get(url)
                 
-                # early releasing 
-                self.early_release_semaphore(self.semaphore)
-
-                # decision
+                # early releasing (already the semaphore is released at this point)
                 base_delay = 0.5*(2**(attempt -1))
                 delay = random.uniform(0, base_delay)
                 sleep = asyncio.sleep(delay)
                 match res.status_code:
                     case 429:
-                        await sleep
-                        ## initiaiting another request here
+                        if attempt < self.config.max_attempts:
+                            await sleep
+                            ## initiaiting another request here
+                            continue
                     case 500:
-                        await sleep
+                        if attempt < self.config.max_attempts:
+                            await sleep
+                            continue
                     case 502:
-                        await sleep
+                        if attempt < self.config.max_attempts:
+                            await sleep
+                            continue
                     case 503:
-                        await sleep
+                        if attempt < self.config.max_attempts:
+                            await sleep
+                            continue
                     case 504:
-                        await sleep
+                        if attempt < self.config.max_attempts:
+                            await sleep
+                            continue
+                return res  
 
             except httpx.TransportError:
-                raise httpx.TransportError('extenral error')
+                raise
+            ## transport errored requests can also be retried! can do this later.
 
 
                 

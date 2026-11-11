@@ -21,3 +21,22 @@ fetcher client after context:  None
 ### jitter illustration 
 ![alt text](image.png)
 
+## A pretentious abstraction of code (not needed)
+- the existing context manager already gives us the chance to release the semaphore
+- async context manager protocol guarantees that the semaphore's __aexit__ runs when execution leaves the block, including when an exception occurs.
+```
+async with self.semaphore:
+    res = await self.client.get(url)
+
+# Semaphore has already been released here.
+``` 
+which is already conceptually equal to the below
+```
+await self.semaphore.acquire()
+
+try:
+    res = await self.client.get(url)
+finally:
+    self.semaphore.release()
+```
+- So, the additional helper with @asynccontextmanager becomes redundant 
