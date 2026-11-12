@@ -54,54 +54,63 @@ class Fetcher:
     
     # @asynccontextmanager
     # async def early_release_semaphore(self, sem: asyncio.Semaphore):
-        released = False
-        await sem.acquire()
+    # released = False
+    # await sem.acquire()
 
-        def release():
-            nonlocal released
-            if not released:
-                sem.release()
-                released = True
+    # def release():
+    #     nonlocal released
+    #     if not released:
+    #         sem.release()
+    #         released = True
 
-        try:
-            yield release
-        finally:
-            release()    
+    # try:
+    #     yield release
+    # finally:
+    #     release()    
 
     async def fetch_response_retry(self, url: str) -> httpx.Response:
         attempt = 0
         while attempt < self.config.max_attempts:
             attempt += 1
             try:
-                async with self.sempahore:
+                async with self.semaphore:
                     res = await self.client.get(url)
                 
                 # early releasing (already the semaphore is released at this point)
-                base_delay = 0.5*(2**(attempt -1))
-                delay = random.uniform(0, base_delay)
-                sleep = asyncio.sleep(delay)
-                match res.status_code:
-                    case 429:
-                        if attempt < self.config.max_attempts:
-                            await sleep
-                            ## initiaiting another request here
-                            continue
-                    case 500:
-                        if attempt < self.config.max_attempts:
-                            await sleep
-                            continue
-                    case 502:
-                        if attempt < self.config.max_attempts:
-                            await sleep
-                            continue
-                    case 503:
-                        if attempt < self.config.max_attempts:
-                            await sleep
-                            continue
-                    case 504:
-                        if attempt < self.config.max_attempts:
-                            await sleep
-                            continue
+                ## We are writing the delays and creating a sleep coroutine before deciding to retry, this should be fixed!
+                status_codes = [429, 500, 502, 503, 504]
+                
+                if res.status_code in status_codes:
+                    '''
+                    only when the response code matches, calculate the delays 
+                    '''
+                    base_delay = 0.5*(2**(attempt -1))
+                    delay = random.uniform(0, base_delay)
+                    await asyncio.sleep(delay)
+                    continue
+                    
+                # match res.status_code:
+                #     case 429:
+                #         if attempt < self.config.max_attempts:
+                #             await sleep
+                #             ## initiaiting another request here
+                #             continue
+                #     case 500:
+                #         if attempt < self.config.max_attempts:
+                #             await sleep
+                #             continue
+                #     case 502:
+                #         if attempt < self.config.max_attempts:
+                #             await sleep
+                #             continue
+                #     case 503:
+                #         if attempt < self.config.max_attempts:
+                #             await sleep
+                #             continue
+                #     case 504:
+                #         if attempt < self.config.max_attempts:
+                #             await sleep
+                #             continue
                 return res  
 
             except httpx.TransportError:
