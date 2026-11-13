@@ -8,11 +8,15 @@ from prod_async_fetcher.fetcher import Fetcher
 
 
 async def main():
-    statuses = iter([503, 503, 200])
+    statuses = iter([{"req":['req-1',503]}, {"req": ['req-2', 200]}, {"req":['req-3', 200]}])
+    # statuses_2 = iter([{"req": ['req-2', 200]}])
+    # order = 1
     async def handler(req):
         status = next(statuses)
-        print(f'running the simulated server: {status}')
-        return httpx.Response(status, request=req)
+        # order+=1
+        print(f'running the simulated server: {status['req'][0]}')
+        await asyncio.sleep(1)
+        return httpx.Response(status['req'][1], request=req)
     
     transport = httpx.MockTransport(handler)
 
@@ -22,8 +26,14 @@ async def main():
 
     try:
         # async with fetcher:
-        res = await fetcher.fetch_response_retry(url="https://example.com")
-        print("Final response:", res.status_code)
+        # res = await fetcher.fetch_response_retry(url="https://example.com")
+        # print("Final response:", res.status_code)
+
+        cs = [fetcher.fetch_response_retry(url="https://example.com"), fetcher.fetch_response_retry(url="https://example.com")]
+
+        tasks = await asyncio.gather(*cs)
+        print("the request-1:" , tasks[0])
+        print("the request-2: ", tasks[1])
     finally:
         await client.aclose()
     # async with Fetcher(Config()) as fetcher:

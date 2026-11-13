@@ -86,7 +86,7 @@ class Fetcher:
                     '''
                     base_delay = 0.5*(2**(attempt -1))
                     delay = random.uniform(0, base_delay)
-                    await asyncio.sleep(delay)
+                    await asyncio.sleep(3)
                     continue
                     
                 # match res.status_code:
@@ -111,6 +111,7 @@ class Fetcher:
                 #         if attempt < self.config.max_attempts:
                 #             await sleep
                 #             continue
+                print("request fulfilled with status code: ", res.status_code)
                 return res  
 
             except httpx.TransportError:
