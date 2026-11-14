@@ -3,23 +3,6 @@ from urllib.parse import urlsplit
 import httpx
 from prod_async_fetcher.config import Config
 
-cfg = Config()
-base_url = 'https://example.com/'
-
-
-rp = rpt.RobotFileParser()
-
-rp.set_url(f'base_url{'robots.txt'}') ## pointing to the site's robots.txt
-'''
-downloads the text, and parses all the Allow, Disallow, and Crawl-delay rules into memory.
-'''
-rp.read(f'base_url{'robots.txt'}') ## fetching the robots.txt behind the hood and parsing (fetch and parse)
-
-rp.can_fetch(cfg.user_agent, f'{base_url}articles/news') # parser compares the target url against the rules it downloaded i
-
-rp.crawl_delay(cfg.user_agent)
-
-
 class RobotChecker:
     def __init__(self, client, config):
         self.cfg = config
