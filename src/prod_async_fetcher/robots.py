@@ -45,10 +45,20 @@ class RobotChecker:
         rp = rpt.RobotFileParser()
 
         rp.set_url(robots_url)
+        print("[debug] the rules: ", res.text.splitlines())
         rp.parse(res.text.splitlines())
+        print("[debug] Default user agents:", rp.default_entry.useragents)
+
+        print('[debug] checking some props:',[(rule.path, rule.allowance, len(rule.path)) for rule in rp.default_entry.rulelines])
+
+        print('[debug] checking permissions: ', rp.can_fetch(self.cfg.user_agent, "https://example.com/private/"))
+        print('[debug] checking permissions for /private/public: ', rp.can_fetch(self.cfg.user_agent, "https://example.com/private/public"))
         self.robots_cache[org] = rp
 
-        
+        print('[debug] checking the parsed entries: ', f'{rp.entries}\n')
+        print('[debug] the default entry: ', f'{rp.default_entry}')
+
+            
         return rp
     
     ## checking permissions

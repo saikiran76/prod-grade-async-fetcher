@@ -13,7 +13,12 @@ async def test():
     """
 
     async def handler(request):
-        print("Fetching:", request.url)
+        print("[debug] Fetching:", request.url)
+        dedented_robots = dedent(robots_content).strip()
+        print("[debug] dedented content: ", dedented_robots)
+        print("[debug] checking the response: ", httpx.Response(
+            200, text = dedented_robots, request=request
+        ))
         return httpx.Response(
             200,
             text=dedent(robots_content).strip(),
