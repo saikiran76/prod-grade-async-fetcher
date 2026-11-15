@@ -8,8 +8,8 @@ from textwrap import dedent
 async def test():
     robots_content = """
         User-agent: *
-        Disallow: /private/
         Allow: /private/public/
+        Disallow: /private/
     """
 
     async def handler(request):
@@ -35,11 +35,12 @@ async def test():
         url2 = "https://example.com/private/public/"
         url3 = "https://example.com/articles/"
 
-        print(await checker.check(url1))
-        print(await checker.check(url2))
-        print(await checker.check(url3))
+        # print(await checker.check(url1))
+        print(await checker.extract_rules(url1))
+        # print(await checker.check(url2))
+        # print(await checker.check(url3))
 
-        print("Cache:", checker.robots_cache.keys())
+        # print("Cache:", checker.robots_cache.keys())
 
     finally:
         await client.aclose()

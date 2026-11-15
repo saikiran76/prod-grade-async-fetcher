@@ -3,11 +3,17 @@ from urllib.parse import urlsplit
 import httpx
 from prod_async_fetcher.config import Config
 
+from dataclasses import dataclass
+
+@dataclass(frozen = True, slots = True)
+class RobotsRule:
+    path: str
+    allowed: bool
 class RobotChecker:
     def __init__(self, client, config):
         self.cfg = config
         self.client = client
-        self.robots_cache = {}
+        self.robots_cache: RobotsRule = {}
         # self.url = url
         # self.rp = rpt.RobotFileParser()
     
@@ -31,7 +37,59 @@ class RobotChecker:
     Crawl-delay: 2
 
     parser converts these textual directives into rules it can evaluate.
+
     '''
+
+    def transform_rules(self, rules: list) -> list[RobotsRule]:
+        transformed_rules: list[RobotsRule] = []
+        for i, rule in enumerate(rules):
+            colon_idx = rule.find(':')
+            if colon_idx != -1:
+                # transformed_rules.append({
+                #     'path': rule[colon_idx+2:]
+                # })
+                if rule[: colon_idx].lower() == 'allow':
+                    # transformed_rules.append({
+                    #     'path': rule[colon_idx+2:],
+                    #     'allowed': True
+                    # })
+                    transformed_rules.append(
+                        RobotsRule(
+                            path=rule[colon_idx+1:].strip(),
+                            allowed=True
+                        )
+                    )
+                elif rule[: colon_idx].lower() == 'disallow':
+                    # transformed_rules.append({
+                    #     'path': rule[colon_idx+2:],
+                    #     'allowed': False
+                    # })
+                    transformed_rules.append(
+                        RobotsRule(
+                            path=rule[colon_idx+1:].strip(),
+                            allowed=False
+                        )
+                    )
+        return transformed_rules
+
+    async def extract_rules(self, url:str):
+        robots_url = self.point_to_root(url)
+        res = await self.client.get(robots_url)
+
+        if res.text:
+            rules = res.text.strip()
+            lines = rules.split('\n')
+
+            trans_rules = self.transform_rules(lines)
+
+            return trans_rules
+        
+        return []
+    
+    
+                
+
+
 
     async def fetch_parse(self, url:str):
         # self.rp.read(f'{self.point_to_root(self.url)}robots.txt')
@@ -47,6 +105,7 @@ class RobotChecker:
         rp.set_url(robots_url)
         print("[debug] the rules: ", res.text.splitlines())
         rp.parse(res.text.splitlines())
+        rp.modified()
         print("[debug] Default user agents:", rp.default_entry.useragents)
 
         print('[debug] checking some props:',[(rule.path, rule.allowance, len(rule.path)) for rule in rp.default_entry.rulelines])
