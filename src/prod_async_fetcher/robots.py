@@ -95,14 +95,18 @@ class RobotChecker:
 
         if path:
             rules = await self.extract_rules(url)
-            paths = [rule.path for rule in rules if rule.allowed]
-            print('[debug] allowed paths: ', paths)
-            if path in paths:
+            matching_rules = [rule for rule in rules if path.startswith(rule.path)]
+            if not matching_rules:
                 return True
-            else:
-                return False
+            print('[debug] rules: ', rules)
+            best_match = max(
+                            matching_rules,
+                            key=lambda rule: len(rule.path)
+                        )
+            return best_match.allowed
         
-        raise('path extraction failed for the given URL')
+        
+        raise ValueError('path extraction failed for the given URL')
 
     
     
