@@ -6,10 +6,14 @@ from prod_async_fetcher.config import Config
 from textwrap import dedent 
 
 async def test():
-    robots_content = """
-        User-agent: *
-        Allow: /private/public/
-        Disallow: /private/
+    robots_content = """\
+    User-agent: *
+    Disallow: /private/
+    Allow: /private/public/
+    Disallow: /admin/
+    Allow: /articles/
+    Disallow:
+    Invalid directive
     """
 
     async def handler(request):
@@ -36,7 +40,8 @@ async def test():
         url3 = "https://example.com/articles/"
 
         # print(await checker.check(url1))
-        print(await checker.extract_rules(url1))
+        print(await checker.extract_rules(url2))
+        print(await checker.is_allowed(url2))
         # print(await checker.check(url2))
         # print(await checker.check(url3))
 

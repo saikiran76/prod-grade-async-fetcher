@@ -42,31 +42,34 @@ class RobotChecker:
 
     def transform_rules(self, rules: list) -> list[RobotsRule]:
         transformed_rules: list[RobotsRule] = []
-        for i, rule in enumerate(rules):
+        for rule in (rules):
             colon_idx = rule.find(':')
             if colon_idx != -1:
                 # transformed_rules.append({
                 #     'path': rule[colon_idx+2:]
                 # })
-                if rule[: colon_idx].lower() == 'allow':
+                path = rule[colon_idx+1:].strip()
+                if not path:
+                    continue
+                if rule[: colon_idx].strip().lower() == 'allow':
                     # transformed_rules.append({
                     #     'path': rule[colon_idx+2:],
                     #     'allowed': True
                     # })
                     transformed_rules.append(
                         RobotsRule(
-                            path=rule[colon_idx+1:].strip(),
+                            path=path,
                             allowed=True
                         )
                     )
-                elif rule[: colon_idx].lower() == 'disallow':
+                elif rule[: colon_idx].strip().lower() == 'disallow':
                     # transformed_rules.append({
                     #     'path': rule[colon_idx+2:],
                     #     'allowed': False
                     # })
                     transformed_rules.append(
                         RobotsRule(
-                            path=rule[colon_idx+1:].strip(),
+                            path=path,
                             allowed=False
                         )
                     )
@@ -85,6 +88,22 @@ class RobotChecker:
             return trans_rules
         
         return []
+    
+    async def is_allowed(self, url:str) -> bool:
+        # extract path
+        path = urlsplit(url).path
+
+        if path:
+            rules = await self.extract_rules(url)
+            paths = [rule.path for rule in rules if rule.allowed]
+            print('[debug] allowed paths: ', paths)
+            if path in paths:
+                return True
+            else:
+                return False
+        
+        raise('path extraction failed for the given URL')
+
     
     
                 
