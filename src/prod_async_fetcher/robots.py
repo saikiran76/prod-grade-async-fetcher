@@ -4,6 +4,7 @@ import httpx
 from prod_async_fetcher.config import Config
 
 from dataclasses import dataclass
+import re
 
 @dataclass(frozen = True, slots = True)
 class RobotsRule:
@@ -39,6 +40,23 @@ class RobotChecker:
     parser converts these textual directives into rules it can evaluate.
 
     '''
+    
+    def rule_matches(self, rule_path: str, url_path: str) -> bool:
+        # wildcard helper
+        anchored = rule_path.endswith("$")
+
+        if anchored:
+            rule_path = rule_path[:-1]
+
+        pattern = re.escape(rule_path)
+        pattern = pattern.replace(r"\*", ".*")
+
+        if anchored:
+            pattern = f"^{pattern}$"
+        else:
+            pattern = f"^{pattern}"
+
+        return re.match(pattern, url_path) is not None
 
     def transform_rules(self, rules: list) -> list[RobotsRule]:
         transformed_rules: list[RobotsRule] = []
@@ -91,18 +109,33 @@ class RobotChecker:
     
     async def is_allowed(self, url:str) -> bool:
         # extract path
-        path = urlsplit(url).path
+        url_path = urlsplit(url).path
 
-        if path:
+        if url_path:
             rules = await self.extract_rules(url)
-            matching_rules = [rule for rule in rules if path.startswith(rule.path)]
+            # matching_rules = [rule for rule in rules if path.startswith(rule.path)]
+            matching_rules = []
+
+            for rule in rules:
+                if self.rule_matches(rule.path, url_path):
+                    matching_rules.append(rule)
+    
             if not matching_rules:
+                print('no matching rules')
                 return True
+            
             print('[debug] rules: ', rules)
+            # best_match = max(
+            #                 matching_rules,
+            #                 key=lambda rule: len(rule.path)
+            #             )
             best_match = max(
-                            matching_rules,
-                            key=lambda rule: len(rule.path)
-                        )
+                matching_rules,
+                key=lambda rule: (
+                    len(rule.path.rstrip("$").replace("*", "")),
+                    rule.allowed
+                )
+            )
             return best_match.allowed
         
         
