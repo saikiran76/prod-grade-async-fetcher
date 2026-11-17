@@ -40,3 +40,11 @@ finally:
     self.semaphore.release()
 ```
 - So, the additional helper with @asynccontextmanager becomes redundant 
+
+
+## Part-1 of 3 implemented
+- Robot permission checking
+- per-host rate-limiting
+- concurrency semaphore
+- HTTP retries & backoff
+- status classification and with page construction
